@@ -35,6 +35,6 @@ ContactManifold::ContactManifold(Entity bodyEntity1, Entity bodyEntity2, Entity 
                                  uint32 contactPointsIndex, uint8 nbContactPoints)
                 :contactPointsIndex(contactPointsIndex), bodyEntity1(bodyEntity1), bodyEntity2(bodyEntity2),
                  colliderEntity1(colliderEntity1), colliderEntity2(colliderEntity2), nbContactPoints(nbContactPoints), frictionImpulse1(0), frictionImpulse2(0),
-                 frictionTwistImpulse(0), isAlreadyInIsland(false) {
+                 frictionTwistImpulse(0), materialVersion1(0), materialVersion2(0), isAlreadyInIsland(false) {
 
 }

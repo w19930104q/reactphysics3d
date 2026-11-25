@@ -95,6 +95,14 @@ class ContactManifold {
         /// Twist friction constraint accumulated impulse
         decimal frictionTwistImpulse;
 
+        /// Version of the material of collider 1 when the cached impulses were computed.
+        /// The cached warm-starting impulses are only valid while the material versions
+        /// of both colliders do not change.
+        uint64 materialVersion1;
+
+        /// Version of the material of collider 2 when the cached impulses were computed.
+        uint64 materialVersion2;
+
         /// True if the contact manifold has already been added into an island
         bool isAlreadyInIsland;
 

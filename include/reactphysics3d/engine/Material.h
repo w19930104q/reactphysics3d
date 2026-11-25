@@ -54,6 +54,12 @@ class Material {
         /// Density of mass used to compute the mass of the collider
         decimal mMassDensity;
 
+        /// Monotonically increasing version of the contact parameters (friction, bounciness).
+        /// It is incremented each time the friction coefficient or the bounciness is modified
+        /// so that all the consumers (contact solver, contact caches, queries) can check that
+        /// they are using parameters from the same version.
+        uint64 mMaterialVersion;
+
         // -------------------- Methods -------------------- //
 
         /// Constructor
@@ -77,6 +83,10 @@ class Material {
 
         /// Return the square root friction coefficient
         decimal getFrictionCoefficientSqrt() const;
+
+        /// Return the current version of the contact parameters (friction coefficient and bounciness).
+        /// The version is incremented each time one of those parameters is modified.
+        uint64 getMaterialVersion() const;
 
         /// Return the mass density of the collider
         decimal getMassDensity() const;
@@ -111,6 +121,10 @@ RP3D_FORCE_INLINE decimal Material::getBounciness() const {
 RP3D_FORCE_INLINE void Material::setBounciness(decimal bounciness) {
     assert(bounciness >= decimal(0.0) && bounciness <= decimal(1.0));
     mBounciness = bounciness;
+
+    // The contact parameters have changed: publish a new material version so that
+    // the contact solver and the contact caches stop using the previous values
+    mMaterialVersion++;
 }
 
 // Return the friction coefficient
@@ -130,11 +144,20 @@ RP3D_FORCE_INLINE decimal Material::getFrictionCoefficient() const {
 RP3D_FORCE_INLINE void Material::setFrictionCoefficient(decimal frictionCoefficient) {
     assert(frictionCoefficient >= decimal(0.0));
     mFrictionCoefficientSqrt = std::sqrt(frictionCoefficient);
+
+    // The contact parameters have changed: publish a new material version so that
+    // the contact solver and the contact caches stop using the previous values
+    mMaterialVersion++;
 }
 
 // Return the square root friction coefficient
 RP3D_FORCE_INLINE decimal Material::getFrictionCoefficientSqrt() const {
     return mFrictionCoefficientSqrt;
+}
+
+// Return the current version of the contact parameters
+RP3D_FORCE_INLINE uint64 Material::getMaterialVersion() const {
+    return mMaterialVersion;
 }
 
 // Return the mass density of the collider

@@ -938,6 +938,14 @@ void CollisionDetectionSystem::createContacts() {
             mCurrentContactManifolds->emplace(contactPair.body1Entity, contactPair.body2Entity, contactPair.collider1Entity,
                                               contactPair.collider2Entity, contactPointsIndex, nbContactPoints);
 
+            // Stamp the manifold with the material versions currently in use. If warm-starting
+            // impulses are carried over from a similar previous manifold, those stamps are
+            // overwritten with the versions for which the cached impulses were computed (see
+            // initContactsWithPreviousOnes()) so that the contact solver can detect stale caches.
+            ContactManifold& newContactManifold = (*mCurrentContactManifolds)[mCurrentContactManifolds->size() - 1];
+            newContactManifold.materialVersion1 = mCollidersComponents.mMaterials[mCollidersComponents.getEntityIndex(contactPair.collider1Entity)].getMaterialVersion();
+            newContactManifold.materialVersion2 = mCollidersComponents.mMaterials[mCollidersComponents.getEntityIndex(contactPair.collider2Entity)].getMaterialVersion();
+
             assert(potentialManifold.nbPotentialContactPoints > 0);
 
             // For each contact point of the manifold
@@ -1117,6 +1125,11 @@ void CollisionDetectionSystem::initContactsWithPreviousOnes() {
                         currentContactManifold.frictionImpulse1 = previousContactManifold.frictionImpulse1;
                         currentContactManifold.frictionImpulse2 = previousContactManifold.frictionImpulse2;
                         currentContactManifold.frictionTwistImpulse = previousContactManifold.frictionTwistImpulse;
+
+                        // Transfer the material versions for which the cached impulses
+                        // have been computed so that the solver can detect stale caches
+                        currentContactManifold.materialVersion1 = previousContactManifold.materialVersion1;
+                        currentContactManifold.materialVersion2 = previousContactManifold.materialVersion2;
 
                         break;
                     }

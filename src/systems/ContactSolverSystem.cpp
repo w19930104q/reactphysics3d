@@ -134,6 +134,32 @@ void ContactSolverSystem::initializeForIsland(uint32 islandIndex) {
         const uint32 collider1Index = mColliderComponents.getEntityIndex(externalManifold.colliderEntity1);
         const uint32 collider2Index = mColliderComponents.getEntityIndex(externalManifold.colliderEntity2);
 
+        // Check whether the warm-starting caches of this manifold have been computed with
+        // the current material versions of both colliders. If a material has been changed at
+        // runtime since the cached impulses were computed, those impulses are derived from
+        // outdated friction/restitution parameters and must not be replayed.
+        const uint64 currentMaterialVersion1 = mColliderComponents.mMaterials[collider1Index].getMaterialVersion();
+        const uint64 currentMaterialVersion2 = mColliderComponents.mMaterials[collider2Index].getMaterialVersion();
+        const bool isMaterialCacheStale = externalManifold.materialVersion1 != currentMaterialVersion1 ||
+                                          externalManifold.materialVersion2 != currentMaterialVersion2;
+        if (isMaterialCacheStale) {
+
+            // Discard the cached friction and penetration impulses. The manifold is stamped
+            // again below so the stale material snapshot cannot be kept longer than this
+            // single committed step.
+            externalManifold.frictionImpulse1 = decimal(0.0);
+            externalManifold.frictionImpulse2 = decimal(0.0);
+            externalManifold.frictionTwistImpulse = decimal(0.0);
+            externalManifold.materialVersion1 = currentMaterialVersion1;
+            externalManifold.materialVersion2 = currentMaterialVersion2;
+
+            const uint32 staleContactPointsStart = externalManifold.contactPointsIndex;
+            for (uint32 c = staleContactPointsStart; c < staleContactPointsStart + externalManifold.nbContactPoints; c++) {
+                (*mAllContactPoints)[c].setPenetrationImpulse(decimal(0.0));
+                (*mAllContactPoints)[c].setIsRestingContact(false);
+            }
+        }
+
         // Get the position of the two bodies
         const Vector3& x1 = mRigidBodyComponents.mCentersOfMassWorld[rigidBodyIndex1];
         const Vector3& x2 = mRigidBodyComponents.mCentersOfMassWorld[rigidBodyIndex2];
